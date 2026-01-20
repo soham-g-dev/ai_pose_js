@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>AI Yoga Trainer – Ardha Halasana</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="style.css" />
 
   <!-- MediaPipe -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
@@ -12,17 +14,30 @@
 </head>
 
 <body>
-  <h1>🧘 Ardha Halasana – AI Trainer</h1>
+  <header>
+    <h1>🧘 AI Yoga Trainer</h1>
+    <p>Pose: <strong>Ardha Halasana</strong></p>
+  </header>
 
-  <div class="container">
-    <video id="video" autoplay muted></video>
-    <canvas id="canvas"></canvas>
-
-    <div class="feedback">
-      <p id="message">Waiting for pose…</p>
-      <h2>Accuracy: <span id="accuracy">0</span>%</h2>
+  <main class="app">
+    <div class="video-container">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
     </div>
-  </div>
+
+    <div class="feedback-panel">
+      <p id="message">Waiting for pose…</p>
+
+      <div class="accuracy-box">
+        <span>Accuracy</span>
+        <h2><span id="accuracy">0</span>%</h2>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Keep camera fixed • Full body visible • Side view</p>
+  </footer>
 
   <script src="script.js"></script>
 </body>

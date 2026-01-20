@@ -1,4 +1,4 @@
-// ================= DOM ELEMENTS =================
+// ================= ELEMENTS =================
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -6,10 +6,13 @@ const ctx = canvas.getContext("2d");
 const messageEl = document.getElementById("message");
 const accuracyEl = document.getElementById("accuracy");
 
-canvas.width = 480;
-canvas.height = 360;
+// ================= CANVAS RESIZE =================
+function resizeCanvas() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+}
 
-// ================= ANGLE CALCULATION =================
+// ================= ANGLE FUNCTION =================
 function calculateAngle(a, b, c) {
   const radians =
     Math.atan2(c.y - b.y, c.x - b.x) -
@@ -20,7 +23,7 @@ function calculateAngle(a, b, c) {
   return angle;
 }
 
-// ================= ACCURACY LOGIC (PROFESSIONAL) =================
+// ================= ACCURACY FUNCTION =================
 function calculateAccuracy(backAngle, legAngle) {
   const idealBack = 90;
   const idealLeg = 165;
@@ -28,15 +31,13 @@ function calculateAccuracy(backAngle, legAngle) {
   const backDiff = Math.abs(backAngle - idealBack);
   const legDiff = Math.abs(legAngle - idealLeg);
 
-  // Weighted error penalty
   let score = 100 - (backDiff * 1.5 + legDiff * 1.2);
-
-  // Clamp between 0–100
   score = Math.max(0, Math.min(100, score));
+
   return Math.round(score);
 }
 
-// ================= MEDIAPIPE POSE =================
+// ================= MEDIAPIPE =================
 const pose = new Pose({
   locateFile: file =>
     `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
@@ -49,9 +50,13 @@ pose.setOptions({
   minTrackingConfidence: 0.5,
 });
 
-// ================= POSE RESULTS =================
+// ================= RESULTS =================
 pose.onResults(results => {
+  if (!video.videoWidth) return;
+
+  resizeCanvas();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
   if (!results.poseLandmarks) {
@@ -60,9 +65,20 @@ pose.onResults(results => {
     return;
   }
 
+  // -------- Skeleton Overlay --------
+  drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
+    color: "#00ff99",
+    lineWidth: 3,
+  });
+
+  drawLandmarks(ctx, results.poseLandmarks, {
+    color: "#ffffff",
+    radius: 4,
+  });
+
   const lm = results.poseLandmarks;
 
-  // LEFT SIDE landmarks (same as Python logic)
+  // LEFT SIDE landmarks (Ardha Halasana)
   const shoulder = lm[11];
   const hip = lm[23];
   const knee = lm[25];
@@ -71,29 +87,28 @@ pose.onResults(results => {
   const backAngle = calculateAngle(shoulder, hip, knee);
   const legAngle = calculateAngle(hip, knee, ankle);
 
-  // ================= ARDHA HALASANA RULE =================
+  // -------- Draw Angles on Video --------
+  ctx.fillStyle = "#ff0000";
+  ctx.font = "22px Arial";
+  ctx.fillText(`Back Angle: ${Math.round(backAngle)}°`, 15, 25);
+  ctx.fillText(`Leg Angle: ${Math.round(legAngle)}°`, 15, 45);
+
+  // -------- Accuracy --------
+  const accuracy = calculateAccuracy(backAngle, legAngle);
+  accuracyEl.innerText = accuracy;
+
+  // -------- Pose Validation --------
   const isCorrect =
     backAngle >= 80 && backAngle <= 100 &&
     legAngle >= 150 && legAngle <= 180;
 
-  // ================= ACCURACY =================
-  const accuracy = calculateAccuracy(backAngle, legAngle);
-  accuracyEl.innerText = accuracy;
-
-  // ================= FEEDBACK =================
   if (isCorrect && accuracy >= 85) {
-    messageEl.innerText = "Excellent. Hold the pose.";
+    messageEl.innerText = "Excellent! Hold the pose.";
     messageEl.style.color = "#00ff99";
   } else {
     messageEl.innerText = "Adjust your posture";
-    messageEl.style.color = "#ff5555";
+    messageEl.style.color = "#ff6666";
   }
-
-  // ================= OPTIONAL VISUAL DEBUG =================
-  ctx.fillStyle = "yellow";
-  ctx.font = "14px Arial";
-  ctx.fillText(`Back: ${Math.round(backAngle)}°`, 20, 30);
-  ctx.fillText(`Leg: ${Math.round(legAngle)}°`, 20, 50);
 });
 
 // ================= CAMERA =================
@@ -101,8 +116,8 @@ const camera = new Camera(video, {
   onFrame: async () => {
     await pose.send({ image: video });
   },
-  width: 480,
-  height: 360,
+  width: 640,
+  height: 480,
 });
 
 camera.start();
