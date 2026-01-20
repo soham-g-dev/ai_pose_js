@@ -37,6 +37,29 @@ function calculateAccuracy(backAngle, legAngle) {
   return Math.round(score);
 }
 
+// ================= VOICE FEEDBACK (ANTI-SPAM) =================
+let lastSpokenText = "";
+let lastSpokenTime = 0;
+const VOICE_COOLDOWN_MS = 4000;
+
+function speak(text) {
+  const now = Date.now();
+
+  if (text === lastSpokenText) return;
+  if (now - lastSpokenTime < VOICE_COOLDOWN_MS) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+
+  speechSynthesis.speak(utterance);
+
+  lastSpokenText = text;
+  lastSpokenTime = now;
+}
+
 // ================= MEDIAPIPE =================
 const pose = new Pose({
   locateFile: file =>
@@ -87,9 +110,9 @@ pose.onResults(results => {
   const backAngle = calculateAngle(shoulder, hip, knee);
   const legAngle = calculateAngle(hip, knee, ankle);
 
-  // -------- Draw Angles on Video --------
-  ctx.fillStyle = "#ff0000";
-  ctx.font = "22px Arial";
+  // -------- Draw Angles --------
+  ctx.fillStyle = "#ffff00";
+  ctx.font = "16px Arial";
   ctx.fillText(`Back Angle: ${Math.round(backAngle)}°`, 15, 25);
   ctx.fillText(`Leg Angle: ${Math.round(legAngle)}°`, 15, 45);
 
@@ -98,17 +121,27 @@ pose.onResults(results => {
   accuracyEl.innerText = accuracy;
 
   // -------- Pose Validation --------
-  const isCorrect =
-    backAngle >= 80 && backAngle <= 100 &&
-    legAngle >= 150 && legAngle <= 180;
+  const isBackCorrect = backAngle >= 80 && backAngle <= 100;
+  const isLegCorrect = legAngle >= 150 && legAngle <= 180;
 
-  if (isCorrect && accuracy >= 85) {
-    messageEl.innerText = "Excellent! Hold the pose.";
+  let feedbackText = "";
+
+  if (isBackCorrect && isLegCorrect && accuracy >= 85) {
+    feedbackText = "Excellent. Hold the posture.";
     messageEl.style.color = "#00ff99";
-  } else {
-    messageEl.innerText = "Adjust your posture";
+  } else if (!isBackCorrect) {
+    feedbackText =
+      backAngle < 80
+        ? "Raise your legs higher."
+        : "Lower your legs slightly.";
+    messageEl.style.color = "#ff6666";
+  } else if (!isLegCorrect) {
+    feedbackText = "Straighten your legs.";
     messageEl.style.color = "#ff6666";
   }
+
+  messageEl.innerText = feedbackText;
+  speak(feedbackText);
 });
 
 // ================= CAMERA =================
