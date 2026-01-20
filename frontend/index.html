@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Yoga Trainer – Ardha Halasana</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+</head>
+
+<body>
+  <h1>🧘 Ardha Halasana – AI Trainer</h1>
+
+  <div class="container">
+    <video id="video" autoplay muted></video>
+    <canvas id="canvas"></canvas>
+
+    <div class="feedback">
+      <p id="message">Waiting for pose…</p>
+      <h2>Accuracy: <span id="accuracy">0</span>%</h2>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
